@@ -1,0 +1,53 @@
+CC=cmoc
+RM=rm -rf
+SAPFS=sapfs.exe
+IMGTOOL=imgtool.exe
+XROAR=xroar.exe -machine coco3 -tv-input rgb -kbd-translate -ram 512K
+
+# TIP
+# WIDTH80:CLS3:PALETTE8,63
+# WIDTH40:CLS3:PALETTE8,63
+
+CFLAGS= -O2 --coco -DCMOC_COMPILER -DPRINTF_FORMAT=0 --org=2800
+LDFLAGS= -lcmoc-crt-dgn
+
+all: Tree.o main huffbuf floppy
+
+Useful.o: Useful.c
+	$(CC) $(CFLAGS) -c $<
+	$(CC) -S $(CFLAGS) $<
+
+BitField.o: BitField.c
+	$(CC) $(CFLAGS) -c $<
+	$(CC) -S $(CFLAGS) $<
+
+Tree.o: Tree.c
+	$(CC) $(CFLAGS) -c $<
+	$(CC) -S $(CFLAGS) $<
+
+Huffman.o: Huffman.c
+	$(CC) $(CFLAGS) -c $<
+	$(CC) -S $(CFLAGS) $<
+
+main: Useful.o BitField.o Tree.o Huffman.o main.c
+	$(CC) $(CFLAGS) -o$@.bin  $^ $(LDFLAGS)
+	$(CC) -S $(CFLAGS)  $^
+
+huffbuf: Useful.o BitField.o Tree.o Huffman.o HuffBuffer.c
+	$(CC) $(CFLAGS) -o$@.bin  $^ $(LDFLAGS)
+	$(CC) -S $(CFLAGS)  $^
+
+
+floppy:
+	$(IMGTOOL) create coco_jvc_rsdos floppy.dsk
+	$(IMGTOOL) put coco_jvc_rsdos floppy.dsk L.BAS L.BAS --ftype=basic --ascii=binary --filter=cocobas
+	$(IMGTOOL) put coco_jvc_rsdos floppy.dsk main.bin main.bin
+	$(IMGTOOL) put coco_jvc_rsdos floppy.dsk T.BAS T.BAS --ftype=basic --ascii=binary --filter=cocobas
+	$(IMGTOOL) put coco_jvc_rsdos floppy.dsk huffbuf.bin huffbuf.bin
+	$(IMGTOOL) dir coco_jvc_rsdos floppy.dsk
+
+run: clean main huffbuf floppy
+	$(XROAR) -load-fd0 floppy.dsk
+
+clean:
+	$(RM) *.o *.a *.bin

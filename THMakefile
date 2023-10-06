@@ -1,0 +1,43 @@
+CC=cmoc
+RM=rm -rf
+SAPFS=sapfs.exe
+TEO=teo
+
+CFLAGS= -O2 --thomto -DCMOC_COMPILER -DPRINTF_FORMAT=1 --org=A000
+LDFLAGS= -lcmoc-crt-thm
+
+all: Tree.o main floppy
+
+Useful.o: Useful.c
+	$(CC) $(CFLAGS) -c $<
+	$(CC) -S $(CFLAGS) $<
+
+BitField.o: BitField.c
+	$(CC) $(CFLAGS) -c $<
+	$(CC) -S $(CFLAGS) $<
+
+Tree.o: Tree.c
+	$(CC) $(CFLAGS) -c $<
+	$(CC) -S $(CFLAGS) $<
+
+Huffman.o: Huffman.c
+	$(CC) $(CFLAGS) -c $<
+	$(CC) -S $(CFLAGS) $<
+
+main: Useful.o BitField.o Tree.o Huffman.o main.c
+	$(CC) $(CFLAGS) -o$@.bin  $^ $(LDFLAGS)
+	$(CC) -S $(CFLAGS)  $^
+
+floppy:
+	$(SAPFS) -c floppy.sap
+	$(SAPFS) -a floppy.sap *.bin
+	$(SAPFS) -t floppy.sap
+
+run: clean main floppy
+	$(TEO) ./floppy.sap
+
+
+run: clean main floppy
+
+clean:
+	$(RM) *.o *.a *.bin
